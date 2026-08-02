@@ -103,7 +103,11 @@
       <div class="modal-card">
         <p class="eyebrow">DAILY REPORT</p>
         <h2 id="dailyTitle">1日目の営業結果</h2>
-        <div class="report-grid" id="dailyReportGrid"></div>
+        <section class="pl-statement" aria-label="損益計算書">
+          <h3>損益計算書（P/L）</h3>
+          <div id="dailyPlStatement"></div>
+        </section>
+        <section class="daily-metrics" id="dailyMetrics"></section>
         <h3>商品別の販売・売れ残り</h3>
         <div class="table-wrap">
           <table class="product-table daily-product-table">
@@ -127,12 +131,28 @@
     <section class="modal-backdrop hidden" id="finalModal">
       <div class="modal-card final-card">
         <p class="eyebrow">FINAL REPORT</p>
-        <h2>7日間の経営結果</h2>
-        <div class="final-score">
-          <span>最終資金</span>
-          <strong id="finalCashLabel">0円</strong>
+        <h2 id="finalTitle">7日間の経営結果</h2>
+        <section class="pl-statement" aria-label="累計損益計算書">
+          <h3 id="finalPlHeading">7日間累計 損益計算書（P/L）</h3>
+          <div id="finalPlStatement"></div>
+        </section>
+        <section class="daily-metrics final-metrics" id="finalMetrics"></section>
+        <h3>商品別の累計実績</h3>
+        <div class="table-wrap">
+          <table class="product-table final-product-table">
+            <thead>
+              <tr>
+                <th>商品</th>
+                <th>仕入数</th>
+                <th>販売数</th>
+                <th>売れ残り</th>
+                <th>売上</th>
+                <th>商品廃棄損</th>
+              </tr>
+            </thead>
+            <tbody id="finalProductBody"></tbody>
+          </table>
         </div>
-        <div class="report-grid" id="finalReportGrid"></div>
         <div class="final-analysis" id="finalAnalysis"></div>
         <button class="primary-button" id="restartButton">もう一度プレイ</button>
       </div>

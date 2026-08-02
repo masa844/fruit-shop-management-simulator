@@ -471,10 +471,15 @@ h1 {
   grid-template-columns: 36px 1fr auto;
   gap: 8px;
   align-items: center;
-  padding: 9px;
+  padding: 10px;
   border: 1px solid #e4dccd;
   border-radius: 10px;
   background: #fffdf8;
+}
+
+.inventory-item.sold-out {
+  opacity: .68;
+  background: #f3efe7;
 }
 
 .inventory-item .icon {
@@ -484,6 +489,49 @@ h1 {
 .inventory-item small {
   display: block;
   color: var(--muted);
+}
+
+.inventory-details {
+  min-width: 0;
+}
+
+.inventory-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.inventory-labels small {
+  white-space: nowrap;
+}
+
+.inventory-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e3ddd1;
+}
+
+.inventory-bar-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+  transition: width .55s ease;
+}
+
+.inventory-item.sold-out .inventory-bar-fill {
+  background: #9b8f80;
+}
+
+.inventory-count {
+  min-width: 48px;
+  text-align: right;
+}
+
+.sold-out-label {
+  color: var(--red);
 }
 
 .sales-log {
@@ -655,5 +703,133 @@ footer {
   .entrance {
     width: 88px;
     right: 4px;
+  }
+}
+
+
+/* Daily P/L */
+.pl-statement {
+  margin: 20px 0 16px;
+}
+
+.pl-statement h3 {
+  margin-bottom: 10px;
+}
+
+.pl-statement > div {
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.pl-row {
+  padding: 13px 16px;
+  border-bottom: 1px solid #e8e1d5;
+}
+
+.pl-row:last-child {
+  border-bottom: 0;
+}
+
+.pl-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.pl-main span {
+  font-weight: 800;
+}
+
+.pl-main strong {
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pl-details {
+  margin-top: 8px;
+  padding: 8px 0 0 18px;
+  border-top: 1px dashed #ddd3c3;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pl-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 3px 0;
+}
+
+.pl-row.subtotal {
+  background: #f4f8f0;
+  border-top: 2px solid #9fbd99;
+}
+
+.pl-row.total {
+  background: #eaf5e5;
+  border-top: 3px double #73966e;
+}
+
+.pl-row.negative {
+  background: #fff0ed;
+}
+
+.pl-row.negative .pl-main strong {
+  color: var(--red);
+}
+
+.daily-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.metric-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.metric-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 19px;
+}
+
+@media (max-width: 700px) {
+  .daily-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+.final-metrics {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 18px;
+}
+
+.final-product-table {
+  min-width: 860px;
+  margin-bottom: 20px;
+}
+
+.final-analysis {
+  margin-top: 22px;
+}
+
+@media (max-width: 700px) {
+  .final-metrics {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

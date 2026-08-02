@@ -5,7 +5,7 @@ const PRODUCTS = [
   { id: "strawberry", name: "いちご", emoji: "🍓", cost: 280, reference: 480, popularity: 0.95, maxQty: 3 },
   { id: "cherry", name: "さくらんぼ", emoji: "🍒", cost: 350, reference: 620, popularity: 0.75, maxQty: 2 },
   { id: "melon", name: "メロン", emoji: "🍈", cost: 900, reference: 1600, popularity: 0.38, maxQty: 1 },
-  { id: "grape", name: "シャインマスカット", emoji: "🍇", cost: 1400, reference: 2400, popularity: 0.30, maxQty: 1 }
+  { id: "grape", name: "巨峰", emoji: "🍇", cost: 1400, reference: 2400, popularity: 0.30, maxQty: 1 }
 ];
 
 const EVENTS = [
@@ -17,39 +17,44 @@ const EVENTS = [
   },
   {
     title: "暑い日",
-    text: "さっぱりした果物が人気。みかん・バナナ・ぶどう系の需要が上がります。",
-    customerMultiplier: 1.08,
-    demand: { orange: 1.35, banana: 1.18, grape: 1.28 }
+    text: "さっぱりした果物が人気。みかん・バナナ・巨峰の需要が上がります。",
+    customerMultiplier: 1.12,
+    demand: { orange: 1.65, banana: 1.4, grape: 1.65 }
   },
   {
     title: "雨の日",
-    text: "人通りが少なく、来店客数が減りそうです。",
-    customerMultiplier: 0.85,
+    text: "人通りが少なく、来店客数が大きく減りそうです。",
+    customerMultiplier: 0.68,
     demand: {}
   },
   {
     title: "テレビで高級果物特集",
-    text: "メロンとシャインマスカットに注目が集まっています。",
-    customerMultiplier: 1.05,
-    demand: { melon: 1.8, grape: 1.9 }
+    text: "メロンと巨峰が話題です。贈答品や高級果物を探す客も増えます。",
+    customerMultiplier: 1.12,
+    budgetMultiplier: 1.25,
+    customerTypeBoost: { "贈答品を探す客": 5, "高級品好きの客": 5, "飲食店の人": 2 },
+    demand: { melon: 4.2, grape: 4.8 }
   },
   {
     title: "近所で運動会",
     text: "家族連れが増え、手頃な果物を複数買う人が増えそうです。",
-    customerMultiplier: 1.28,
-    demand: { apple: 1.18, orange: 1.22, banana: 1.25 }
+    customerMultiplier: 1.4,
+    customerTypeBoost: { "親子客": 3 },
+    demand: { apple: 1.6, orange: 1.75, banana: 1.8 }
   },
   {
     title: "給料日後の週末",
     text: "客単価が上がり、高価格の商品も売れやすくなります。",
-    customerMultiplier: 1.16,
-    demand: { strawberry: 1.22, cherry: 1.28, melon: 1.3, grape: 1.35 }
+    customerMultiplier: 1.22,
+    budgetMultiplier: 1.35,
+    customerTypeBoost: { "贈答品を探す客": 2, "高級品好きの客": 2 },
+    demand: { strawberry: 1.5, cherry: 1.65, melon: 1.9, grape: 2.0 }
   },
   {
     title: "競合店の特売",
-    text: "価格に敏感なお客さんが増えています。割高な商品は敬遠されます。",
-    customerMultiplier: 1.00,
-    priceSensitivity: 1.28,
+    text: "価格に敏感なお客さんが増えています。割高な商品は強く敬遠されます。",
+    customerMultiplier: 1.0,
+    priceSensitivity: 1.55,
     demand: {}
   }
 ];
@@ -67,9 +72,9 @@ const CUSTOMER_TYPES = [
 ];
 
 const FIXED_COSTS = {
-  rent: 4000,
-  utilities: 1500,
-  labor: 3500
+  rent: 3500,
+  utilities: 1000,
+  labor: 3000
 };
 
 const state = {
@@ -123,13 +128,17 @@ const refs = {
   customerLayer: document.getElementById("customerLayer"),
   dailyModal: document.getElementById("dailyModal"),
   dailyTitle: document.getElementById("dailyTitle"),
-  dailyReportGrid: document.getElementById("dailyReportGrid"),
+  dailyPlStatement: document.getElementById("dailyPlStatement"),
+  dailyMetrics: document.getElementById("dailyMetrics"),
   dailyProductBody: document.getElementById("dailyProductBody"),
   dailyComment: document.getElementById("dailyComment"),
   nextDayButton: document.getElementById("nextDayButton"),
   finalModal: document.getElementById("finalModal"),
-  finalCashLabel: document.getElementById("finalCashLabel"),
-  finalReportGrid: document.getElementById("finalReportGrid"),
+  finalTitle: document.getElementById("finalTitle"),
+  finalPlHeading: document.getElementById("finalPlHeading"),
+  finalPlStatement: document.getElementById("finalPlStatement"),
+  finalMetrics: document.getElementById("finalMetrics"),
+  finalProductBody: document.getElementById("finalProductBody"),
   finalAnalysis: document.getElementById("finalAnalysis"),
   restartButton: document.getElementById("restartButton")
 };
@@ -271,6 +280,7 @@ function openShop() {
   refs.shopPanel.classList.add("active");
   refs.salesLog.innerHTML = "";
   refs.customerLayer.innerHTML = "";
+  refs.inventoryGrid.innerHTML = "";
 
   renderShelves();
   updateLiveDisplay();
@@ -281,10 +291,13 @@ function openShop() {
 function renderShelves() {
   refs.shelves.innerHTML = "";
   PRODUCTS.forEach(product => {
+    const stock = state.inventory[product.id] || 0;
+    if (stock <= 0) return;
+
     const shelf = document.createElement("div");
     shelf.className = "shelf";
     shelf.innerHTML = `
-      <div class="fruit">${product.emoji.repeat(Math.min(3, Math.max(1, state.inventory[product.id])))}</div>
+      <div class="fruit">${product.emoji.repeat(Math.min(3, stock))}</div>
       <span>${product.name} ${yen(state.prices[product.id])}</span>
     `;
     refs.shelves.appendChild(shelf);
@@ -298,20 +311,47 @@ function updateLiveDisplay() {
   refs.customerCountLabel.textContent = `${state.customers}人`;
   refs.unitsSoldLabel.textContent = `${state.unitsSold}点`;
   refs.cashLabel.textContent = yen(state.cash);
-  refs.inventoryGrid.innerHTML = "";
-
   PRODUCTS.forEach(product => {
-    const item = document.createElement("div");
-    item.className = "inventory-item";
     const purchased = state.purchased[product.id] || 0;
+    if (purchased <= 0) {
+      document.getElementById(`inventory-${product.id}`)?.remove();
+      return;
+    }
+
     const remaining = state.inventory[product.id] || 0;
     const sold = purchased - remaining;
-    item.innerHTML = `
-      <div class="icon">${product.emoji}</div>
-      <div><strong>${product.name}</strong><small>販売 ${sold} / 仕入 ${purchased}</small></div>
-      <strong>残 ${remaining}</strong>
-    `;
-    refs.inventoryGrid.appendChild(item);
+    const remainingRate = clamp((remaining / purchased) * 100, 0, 100);
+    let item = document.getElementById(`inventory-${product.id}`);
+
+    if (!item) {
+      item = document.createElement("div");
+      item.id = `inventory-${product.id}`;
+      item.className = "inventory-item";
+      item.innerHTML = `
+        <div class="icon">${product.emoji}</div>
+        <div class="inventory-details">
+          <div class="inventory-labels">
+            <strong>${product.name}</strong>
+            <small data-role="sold"></small>
+          </div>
+          <div class="inventory-bar" role="progressbar" aria-label="${product.name}の残り在庫" aria-valuemin="0" aria-valuemax="${purchased}">
+            <div class="inventory-bar-fill" data-role="bar"></div>
+          </div>
+        </div>
+        <strong class="inventory-count" data-role="remaining"></strong>
+      `;
+      refs.inventoryGrid.appendChild(item);
+    }
+
+    item.classList.toggle("sold-out", remaining === 0);
+    item.querySelector('[data-role="sold"]').textContent = `販売 ${sold} / 仕入 ${purchased}`;
+    item.querySelector('[data-role="bar"]').style.width = `${remainingRate}%`;
+    const remainingLabel = item.querySelector('[data-role="remaining"]');
+    remainingLabel.textContent = remaining === 0 ? "売り切れ" : `残 ${remaining}`;
+    remainingLabel.classList.toggle("sold-out-label", remaining === 0);
+    const progress = item.querySelector('[role="progressbar"]');
+    progress.setAttribute("aria-valuenow", remaining);
+    progress.setAttribute("aria-valuetext", `${purchased}個中${remaining}個`);
   });
 }
 
@@ -348,15 +388,21 @@ function scheduleNextCustomer() {
 function processCustomer() {
   state.customers += 1;
 
-  const totalWeight = CUSTOMER_TYPES.reduce((sum, item) => sum + (item.weight || 1), 0);
+  const typeBoosts = state.event.customerTypeBoost || {};
+  const weightedTypes = CUSTOMER_TYPES.map(item => ({
+    ...item,
+    eventWeight: (item.weight || 1) * (typeBoosts[item.name] || 1)
+  }));
+  const totalWeight = weightedTypes.reduce((sum, item) => sum + item.eventWeight, 0);
   let roll = Math.random() * totalWeight;
-  const type = CUSTOMER_TYPES.find(item => {
-    roll -= item.weight || 1;
+  const type = weightedTypes.find(item => {
+    roll -= item.eventWeight;
     return roll <= 0;
-  }) || CUSTOMER_TYPES[0];
+  }) || weightedTypes[0];
+  const budgetMultiplier = state.event.budgetMultiplier || 1;
   const customer = {
     ...type,
-    budget: randomInt(type.budget[0], type.budget[1]),
+    budget: Math.round(randomInt(type.budget[0], type.budget[1]) * budgetMultiplier),
     sensitivity: randomBetween(type.sensitivity[0], type.sensitivity[1])
   };
 
@@ -487,8 +533,9 @@ function closeShop() {
 
   state.cash -= fixedCost;
 
-  const grossProfit = state.daySales - state.dayCostOfGoods;
-  const operatingProfit = grossProfit - fixedCost - wasteCost;
+  const totalCostOfSales = state.dayCostOfGoods + wasteCost;
+  const grossProfit = state.daySales - totalCostOfSales;
+  const operatingProfit = grossProfit - fixedCost;
   const purchaseTotal = PRODUCTS.reduce((sum, product) => sum + (state.purchased[product.id] || 0) * product.cost, 0);
   const inventorySellThrough = state.unitsSold / Math.max(1, state.unitsSold + remainingUnits);
   const averageSpend = state.daySales / Math.max(1, state.customers);
@@ -515,6 +562,7 @@ function closeShop() {
     productBreakdown,
     sales: state.daySales,
     costOfGoods: state.dayCostOfGoods,
+    totalCostOfSales,
     grossProfit,
     fixedCost,
     wasteCost,
@@ -533,21 +581,53 @@ function closeShop() {
 
 function showDailyReport(result) {
   refs.dailyTitle.textContent = `${result.day}日目の営業結果`;
-  const reportItems = [
-    ["売上高", yen(result.sales), "highlight"],
-    ["売上原価", yen(result.costOfGoods), ""],
-    ["売上総利益", yen(result.grossProfit), "highlight"],
-    ["固定費", yen(result.fixedCost), ""],
-    ["売れ残り原価", yen(result.wasteCost), result.wasteCost > result.sales * .2 ? "negative" : ""],
-    ["営業利益", yen(result.operatingProfit), result.operatingProfit >= 0 ? "highlight" : "negative"],
-    ["来店客数", `${result.customers}人`, ""],
-    ["平均客単価", yen(result.averageSpend), ""],
-    ["在庫消化率", `${(result.inventorySellThrough * 100).toFixed(1)}%`, ""],
-    ["営業終了時資金", yen(result.endCash), result.endCash >= result.startCash ? "highlight" : "negative"]
+
+  const plRows = [
+    { label: "売上高", value: result.sales, className: "revenue" },
+    {
+      label: "売上原価",
+      value: result.totalCostOfSales,
+      className: "cost",
+      details: [
+        ["販売した商品の原価", result.costOfGoods],
+        ["商品廃棄損", result.wasteCost]
+      ]
+    },
+    { label: "売上総利益", value: result.grossProfit, className: result.grossProfit >= 0 ? "subtotal positive" : "subtotal negative" },
+    {
+      label: "固定費",
+      value: result.fixedCost,
+      className: "cost",
+      details: [
+        ["家賃", FIXED_COSTS.rent],
+        ["光熱費", FIXED_COSTS.utilities],
+        ["人件費", FIXED_COSTS.labor]
+      ]
+    },
+    { label: "営業利益", value: result.operatingProfit, className: result.operatingProfit >= 0 ? "total positive" : "total negative" }
   ];
 
-  refs.dailyReportGrid.innerHTML = reportItems.map(([label, value, cls]) => `
-    <div class="report-item ${cls}">
+  refs.dailyPlStatement.innerHTML = plRows.map(row => `
+    <div class="pl-row ${row.className}">
+      <div class="pl-main">
+        <span>${row.label}</span>
+        <strong>${yen(row.value)}</strong>
+      </div>
+      ${row.details ? `<div class="pl-details">${row.details.map(([label, value]) => `
+        <div><span>${label}</span><span>${yen(value)}</span></div>
+      `).join("")}</div>` : ""}
+    </div>
+  `).join("");
+
+  const metrics = [
+    ["来店客数", `${result.customers}人`],
+    ["平均客単価", yen(result.averageSpend)],
+    ["在庫消化率", `${(result.inventorySellThrough * 100).toFixed(1)}%`],
+    ["営業終了時資金", yen(result.endCash)]
+  ];
+
+  refs.dailyMetrics.innerHTML = metrics.map(([label, value]) => `
+    <div class="metric-card">
       <span>${label}</span>
       <strong>${value}</strong>
     </div>
@@ -574,13 +654,15 @@ function showDailyReport(result) {
   else comments.push("今日は赤字でした。価格・仕入量・固定費の関係を見直す必要があります。");
 
   if (result.inventorySellThrough > .82) comments.push("仕入れた商品の多くを販売できています。");
-  else if (result.inventorySellThrough < .48) comments.push("売れ残りが多く、過剰仕入れの影響が出ています。");
+  else if (result.inventorySellThrough < .48) comments.push("売れ残りが多く、商品廃棄損が利益を圧迫しています。");
 
   if (result.averageSpend > 1300) comments.push("平均客単価は高めでした。");
   if (result.customers < 12) comments.push("来店客数が少ない日でも利益を出せる価格設計が重要です。");
 
   refs.dailyComment.textContent = comments.join(" ");
-  refs.nextDayButton.textContent = state.day >= 7 ? "最終結果を見る" : "次の日へ";
+  refs.nextDayButton.textContent = state.cash <= 0
+    ? "ゲームオーバー結果を見る"
+    : state.day >= 7 ? "最終結果を見る" : "次の日へ";
   refs.dailyModal.classList.remove("hidden");
 }
 
@@ -597,63 +679,141 @@ function proceedAfterDailyReport() {
 }
 
 function showFinalReport() {
+  const isGameOver = state.cash <= 0;
+  const operatedDays = state.histories.length;
+  refs.finalTitle.textContent = isGameOver ? "ゲームオーバー" : "7日間の経営結果";
+  refs.finalPlHeading.textContent = `${operatedDays}日間累計 損益計算書（P/L）`;
+
   const totalSales = state.histories.reduce((sum, day) => sum + day.sales, 0);
-  const totalOperatingProfit = state.histories.reduce((sum, day) => sum + day.operatingProfit, 0);
+  const totalCostOfGoods = state.histories.reduce((sum, day) => sum + day.costOfGoods, 0);
   const totalWaste = state.histories.reduce((sum, day) => sum + day.wasteCost, 0);
+  const totalCostOfSales = totalCostOfGoods + totalWaste;
+  const totalGrossProfit = totalSales - totalCostOfSales;
+  const totalFixedCost = state.histories.reduce((sum, day) => sum + day.fixedCost, 0);
+  const totalOperatingProfit = totalGrossProfit - totalFixedCost;
   const totalCustomers = state.histories.reduce((sum, day) => sum + day.customers, 0);
   const totalUnits = state.histories.reduce((sum, day) => sum + day.unitsSold, 0);
   const totalPurchasedUnits = state.histories.reduce((sum, day) => {
-    const sold = day.unitsSold;
-    const denominator = Math.max(day.inventorySellThrough, .0001);
-    return sum + sold / denominator;
+    return sum + day.productBreakdown.reduce((sub, item) => sub + item.purchased, 0);
   }, 0);
   const averageSpend = totalSales / Math.max(1, totalCustomers);
-  const wasteRate = totalWaste / Math.max(1, state.histories.reduce((sum, day) => sum + day.purchaseTotal, 0));
+  const inventorySellThrough = totalUnits / Math.max(1, totalPurchasedUnits);
+  const profitableDays = state.histories.filter(day => day.operatingProfit > 0).length;
 
-  const productRanking = PRODUCTS.map(product => {
-    const total = state.productTotals[product.id];
-    return {
-      ...product,
-      contribution: total.sales - total.cost - total.wasteCost,
-      ...total
-    };
-  }).sort((a, b) => b.contribution - a.contribution);
+  const plRows = [
+    { label: "売上高", value: totalSales, className: "revenue" },
+    {
+      label: "売上原価",
+      value: totalCostOfSales,
+      className: "cost",
+      details: [
+        ["販売した商品の原価", totalCostOfGoods],
+        ["商品廃棄損", totalWaste]
+      ]
+    },
+    { label: "売上総利益", value: totalGrossProfit, className: totalGrossProfit >= 0 ? "subtotal positive" : "subtotal negative" },
+    {
+      label: "固定費",
+      value: totalFixedCost,
+      className: "cost",
+      details: [
+        ["家賃", FIXED_COSTS.rent * operatedDays],
+        ["光熱費", FIXED_COSTS.utilities * operatedDays],
+        ["人件費", FIXED_COSTS.labor * operatedDays]
+      ]
+    },
+    { label: "営業利益", value: totalOperatingProfit, className: totalOperatingProfit >= 0 ? "total positive" : "total negative" }
+  ];
 
-  const topProduct = productRanking[0];
-  const mostSold = [...productRanking].sort((a, b) => b.sold - a.sold)[0];
+  refs.finalPlStatement.innerHTML = plRows.map(row => `
+    <div class="pl-row ${row.className}">
+      <div class="pl-main">
+        <span>${row.label}</span>
+        <strong>${yen(row.value)}</strong>
+      </div>
+      ${row.details ? `<div class="pl-details">${row.details.map(([label, value]) => `
+        <div><span>${label}</span><span>${yen(value)}</span></div>
+      `).join("")}</div>` : ""}
+    </div>
+  `).join("");
 
-  refs.finalCashLabel.textContent = yen(state.cash);
-  refs.finalReportGrid.innerHTML = [
-    ["7日間の総売上", yen(totalSales), "highlight"],
-    ["7日間の営業利益", yen(totalOperatingProfit), totalOperatingProfit >= 0 ? "highlight" : "negative"],
-    ["廃棄・売れ残り原価", yen(totalWaste), wasteRate > .25 ? "negative" : ""],
-    ["廃棄率", `${(wasteRate * 100).toFixed(1)}%`, wasteRate < .15 ? "highlight" : ""],
-    ["総来店客数", `${totalCustomers}人`, ""],
-    ["平均客単価", yen(averageSpend), ""],
-    ["最も売れた商品", `${mostSold.emoji} ${mostSold.name} ${mostSold.sold}点`, ""],
-    ["利益貢献トップ", `${topProduct.emoji} ${topProduct.name} ${yen(topProduct.contribution)}`, "highlight"]
-  ].map(([label, value, cls]) => `
-    <div class="report-item ${cls}">
+  const metrics = [
+    [isGameOver ? "終了時資金" : "最終資金", yen(state.cash)],
+    ["総来店客数", `${totalCustomers}人`],
+    ["平均客単価", yen(averageSpend)],
+    ["在庫消化率", `${(inventorySellThrough * 100).toFixed(1)}%`],
+    ["総販売点数", `${totalUnits}点`],
+    ["黒字日数", `${profitableDays} / ${operatedDays}日`]
+  ];
+
+  refs.finalMetrics.innerHTML = metrics.map(([label, value]) => `
+    <div class="metric-card">
       <span>${label}</span>
       <strong>${value}</strong>
     </div>
   `).join("");
 
+  const productResults = PRODUCTS.map(product => {
+    const aggregate = state.histories.reduce((acc, day) => {
+      const item = day.productBreakdown.find(entry => entry.id === product.id);
+      if (item) {
+        acc.purchased += item.purchased;
+        acc.sold += item.sold;
+        acc.remaining += item.remaining;
+        acc.sales += item.sales;
+      }
+      return acc;
+    }, { purchased: 0, sold: 0, remaining: 0, sales: 0 });
+
+    return {
+      ...product,
+      ...aggregate,
+      wasteCost: aggregate.remaining * product.cost,
+      contribution: aggregate.sales - (aggregate.purchased * product.cost)
+    };
+  });
+
+  refs.finalProductBody.innerHTML = productResults.map(item => `
+    <tr>
+      <td>
+        <div class="product-name">
+          <span class="product-emoji">${item.emoji}</span>
+          <span>${item.name}</span>
+        </div>
+      </td>
+      <td>${item.purchased}</td>
+      <td>${item.sold}</td>
+      <td>${item.remaining}</td>
+      <td>${yen(item.sales)}</td>
+      <td>${yen(item.wasteCost)}</td>
+    </tr>
+  `).join("");
+
+  const topContribution = [...productResults].sort((a, b) => b.contribution - a.contribution)[0];
+  const mostSold = [...productResults].sort((a, b) => b.sold - a.sold)[0];
+  const mostWasted = [...productResults].sort((a, b) => b.wasteCost - a.wasteCost)[0];
   const analyses = [];
-  const capitalGrowth = state.cash - 100000;
 
-  if (capitalGrowth >= 60000) analyses.push("非常に高い収益性を実現しました。価格と仕入量の調整がうまく機能しています。");
-  else if (capitalGrowth >= 20000) analyses.push("安定して利益を積み上げられました。");
-  else if (capitalGrowth >= 0) analyses.push("元手を維持しながら黒字で終了しました。");
-  else analyses.push("元手を減らして終了しました。売れ残りと価格設定を中心に検討してみましょう。");
+  if (isGameOver) {
+    analyses.push(`手元資金が0円以下となり、${operatedDays}日目で営業を継続できなくなりました。`);
+  } else if (totalOperatingProfit > 30000) {
+    analyses.push("7日間を通じて高い営業利益を確保できました。");
+  } else if (totalOperatingProfit > 0) {
+    analyses.push("7日間の累計では黒字を確保できました。");
+  } else {
+    analyses.push("7日間の累計は赤字となりました。仕入量と価格設定を見直す余地があります。");
+  }
 
-  if (wasteRate > .3) analyses.push("売れ残り原価が大きく、在庫管理が利益を圧迫しています。");
-  else if (wasteRate < .12) analyses.push("廃棄率を低く抑え、効率よく在庫を回せました。");
+  if (inventorySellThrough >= .85) analyses.push("在庫消化率が高く、発注量を効率よく販売できています。");
+  else if (inventorySellThrough < .6) analyses.push("在庫消化率が低く、商品廃棄損が利益を圧迫しています。");
 
-  if (averageSpend < 700) analyses.push("客単価は低めです。安売りによる販売数量と利益率のバランスが論点になります。");
-  else if (averageSpend > 1600) analyses.push("客単価は高めです。高価格でも買う顧客を捉えられています。");
+  if (averageSpend >= 1500) analyses.push("平均客単価は高めで、高価格帯の商品も売上に貢献しました。");
+  else if (averageSpend < 800) analyses.push("平均客単価は低めです。値下げによる販売増と利益率のバランスが課題です。");
 
-  analyses.push(`7日間で最も利益に貢献した商品は${topProduct.name}でした。`);
+  analyses.push(`最も販売数が多かった商品は${mostSold.name}（${mostSold.sold}点）でした。`);
+  analyses.push(`商品別の利益貢献が最も大きかったのは${topContribution.name}でした。`);
+  if (mostWasted.wasteCost > 0) analyses.push(`商品廃棄損が最も大きかったのは${mostWasted.name}（${yen(mostWasted.wasteCost)}）でした。`);
+
   refs.finalAnalysis.textContent = analyses.join(" ");
   refs.finalModal.classList.remove("hidden");
 }
