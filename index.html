@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7日間くだもの店経営シミュレーター</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="game-header">
+    <div>
+      <p class="eyebrow">経営学ミニ教材</p>
+      <h1>7日間くだもの店経営シミュレーター</h1>
+    </div>
+    <div class="header-stats">
+      <div><span>日数</span><strong id="dayLabel">1 / 7日目</strong></div>
+      <div><span>手元資金</span><strong id="cashLabel">100,000円</strong></div>
+      <div><span>状態</span><strong id="phaseLabel">営業準備</strong></div>
+    </div>
+  </header>
+
+  <main class="game-layout">
+    <section class="panel setup-panel" id="setupPanel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">OPENING PREPARATION</p>
+          <h2>営業準備</h2>
+        </div>
+        <div class="forecast-card">
+          <span>今日の情報</span>
+          <strong id="forecastTitle">平穏な一日</strong>
+          <p id="forecastText">来店客数・需要ともに標準的です。</p>
+        </div>
+      </div>
+
+      <div class="cost-strip">
+        <div><span>本日の固定費</span><strong id="fixedCostLabel">9,000円</strong></div>
+        <div><span>今回の仕入予定</span><strong id="purchaseTotalLabel">0円</strong></div>
+        <div><span>開店後の資金残高</span><strong id="cashAfterPurchaseLabel">100,000円</strong></div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="product-table">
+          <thead>
+            <tr>
+              <th>商品</th>
+              <th>仕入単価</th>
+              <th>参考価格</th>
+              <th>仕入数</th>
+              <th>販売価格</th>
+              <th>仕入額</th>
+            </tr>
+          </thead>
+          <tbody id="productSetupBody"></tbody>
+        </table>
+      </div>
+
+      <div class="setup-actions">
+        <p id="setupMessage">手元資金の範囲で仕入数と販売価格を決めてください。</p>
+        <button class="primary-button" id="openShopButton">開店する</button>
+      </div>
+    </section>
+
+    <section class="panel shop-panel" id="shopPanel">
+      <div class="shop-topbar">
+        <div class="clock-card">
+          <span>営業時間</span>
+          <strong id="clockLabel">10:00</strong>
+          <div class="time-track"><div id="timeProgress"></div></div>
+        </div>
+        <div class="live-stat"><span>売上</span><strong id="salesLabel">0円</strong></div>
+        <div class="live-stat"><span>来店客数</span><strong id="customerCountLabel">0人</strong></div>
+        <div class="live-stat"><span>販売点数</span><strong id="unitsSoldLabel">0点</strong></div>
+      </div>
+
+      <div class="shop-scene">
+        <div class="awning">くだもの屋</div>
+        <div class="store-sign">FRUIT MARKET</div>
+        <div class="shop-floor">
+          <div class="shelves" id="shelves"></div>
+          <div class="counter">
+            <div class="cash-register">🧾</div>
+            <span>レジ</span>
+          </div>
+          <div class="entrance">入口</div>
+          <div class="customer-layer" id="customerLayer"></div>
+        </div>
+      </div>
+
+      <div class="shop-bottom">
+        <div class="inventory-card">
+          <h3>在庫・販売状況</h3>
+          <div id="inventoryGrid" class="inventory-grid"></div>
+        </div>
+        <div class="log-card">
+          <h3>リアルタイム販売ログ</h3>
+          <div id="salesLog" class="sales-log"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-backdrop hidden" id="dailyModal">
+      <div class="modal-card">
+        <p class="eyebrow">DAILY REPORT</p>
+        <h2 id="dailyTitle">1日目の営業結果</h2>
+        <div class="report-grid" id="dailyReportGrid"></div>
+        <h3>商品別の販売・売れ残り</h3>
+        <div class="table-wrap">
+          <table class="product-table daily-product-table">
+            <thead>
+              <tr>
+                <th>商品</th>
+                <th>仕入数</th>
+                <th>販売数</th>
+                <th>売れ残り</th>
+                <th>売上</th>
+              </tr>
+            </thead>
+            <tbody id="dailyProductBody"></tbody>
+          </table>
+        </div>
+        <div class="report-comment" id="dailyComment"></div>
+        <button class="primary-button" id="nextDayButton">次の日へ</button>
+      </div>
+    </section>
+
+    <section class="modal-backdrop hidden" id="finalModal">
+      <div class="modal-card final-card">
+        <p class="eyebrow">FINAL REPORT</p>
+        <h2>7日間の経営結果</h2>
+        <div class="final-score">
+          <span>最終資金</span>
+          <strong id="finalCashLabel">0円</strong>
+        </div>
+        <div class="report-grid" id="finalReportGrid"></div>
+        <div class="final-analysis" id="finalAnalysis"></div>
+        <button class="primary-button" id="restartButton">もう一度プレイ</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>売上だけでなく、売上原価・固定費・売れ残りによる損失を差し引いた利益と、手元資金の動きにも注目してみてください。</p>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>
