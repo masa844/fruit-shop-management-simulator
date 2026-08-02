@@ -6,7 +6,9 @@
 
 ## ゲームを遊ぶ
 
-GitHub Pagesで公開している場合は、公開ページへアクセスするだけで遊べます。
+GitHub Pagesの公開ページへアクセスするだけで遊べます。
+
+https://masa844.github.io/fruit-shop-management-simulator/
 
 ダウンロードして遊ぶ場合は、ファイルを展開して `index.html` をブラウザで開いてください。インストールやログインは必要ありません。
 
